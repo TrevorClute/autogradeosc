@@ -1,1 +1,1 @@
-(link)[https://autogradeosc.app]
+https://autogradeosc.app
