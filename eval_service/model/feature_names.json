@@ -1,0 +1,1 @@
+["cosine_similarity", "euclidean_distance", "word_count", "avg_word_length", "avg_sentence_length", "type_token_ratio", "complex_word_ratio", "avg_syllables", "spelling_error_ratio", "grammar_error_ratio"]

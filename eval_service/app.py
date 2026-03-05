@@ -1,18 +1,41 @@
 from flask import Flask, request, jsonify
-import os
+import os, json, warnings
 from dotenv import load_dotenv
 from pathlib import Path
+
 import joblib
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from model.issue_features import get_manual_features  # Import your grammar helper
-from mangum import Mangum
+import language_tool_python
 
-# env_path = Path(__file__).resolve().parent / '.env'
-# load_dotenv(dotenv_path=env_path)
+from model.utils import hand_crafted_features, embedding_distance_features
+
+warnings.filterwarnings("ignore")
+
+env_path = Path(__file__).resolve().parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
 app = Flask(__name__)
 INTERNAL_API_KEY = os.getenv('FLASK_API_KEY')
+
+PROMPT_MAP = {
+    1: "Why would you be a good candidate for the program?",
+    2: "How might you benefit from participation in the program?",
+    3: "Give an example of your work on a group project. Describe your role, any successes, and how you handled any frustrations.",
+    4: "Please look at the past student projects in the archives on this website and detail which ones are of interest to you and why."
+}
+
+MODEL_DIR = Path(__file__).resolve().parent / 'model'
+
+svc_model = joblib.load(str(MODEL_DIR / "svc_pipeline.pkl"))
+
+
+with open(MODEL_DIR / "label_mapping.json") as f:
+    mapping = json.load(f)
+
+idx_to_label = {int(k): int(v) for k, v in mapping["idx_to_label"].items()}
+embedder = SentenceTransformer('all-MiniLM-L6-v2')
+lang_tool = language_tool_python.LanguageTool("en-US")
 
 def validate_request(func):
     def wrapper(*args, **kwargs):
@@ -24,46 +47,70 @@ def validate_request(func):
     return wrapper
 
 
-MODEL_PATH = 'model/classifier.pkl' 
-TRANSFORMER_NAME = 'all-mpnet-base-v2'  
+def evaluate_essay(essay_text, prompt_text):
+    prompt_embed = embedder.encode(prompt_text)
+    essay_embed = embedder.encode(essay_text)
 
-PROMPT_MAP = {
-    1: "Why would you be a good candidate for the program?",
-    2: "How might you benefit from participation in the program?",
-    3: "Give an example of your work on a group project. Describe your role, any successes, and how you handled any frustrations.",
-    4: "Please look at the past student projects in the archives on this website and detail which ones are of interest to you and why."
-}
+    hc = hand_crafted_features(essay_text, lang_tool)
+    dist = embedding_distance_features(prompt_embed, essay_embed)
 
-clf = joblib.load(MODEL_PATH)
-embedder = SentenceTransformer(TRANSFORMER_NAME)
+    features = {**dist, **hc}
+    X = np.array([list(features.values())], dtype=np.float32)
+
+    pred_idx = svc_model.predict(X)[0]
+    score = idx_to_label[int(pred_idx)]
+
+    word_count = int(hc["word_count"])
+    spelling_errors = round(hc["spelling_error_ratio"] * word_count)
+    grammar_errors = round(hc["grammar_error_ratio"] * word_count)
+
+    return {
+        "score": score,
+        "word_count": word_count,
+        "spelling_errors": spelling_errors,
+        "grammar_errors": grammar_errors,
+    }
+
+
+@app.route('/health')
+def health():
+    return "OK", 200
+
 
 @app.route('/evaluate', methods=['POST'])
 @validate_request
 def analyze_essay():
     data = request.json
-
     essay_text = data.get('essay_text', '')
     prompt_id = data.get('prompt_id', 1)
+    prompt_text = PROMPT_MAP.get(prompt_id, PROMPT_MAP[1])
 
-    prompt_text = PROMPT_MAP.get(prompt_id, "")
+    result = evaluate_essay(essay_text, prompt_text)
+    return jsonify(result)
 
-    fusion_string = f"Question: {prompt_text} \n Answer: {essay_text}"
 
-    features_bert = embedder.encode([fusion_string])
+@app.route('/evaluate/batch', methods=['POST'])
+@validate_request
+def analyze_essays_batch():
+    data = request.json
+    essays = data.get('essays', [])
 
-    stats = get_manual_features(essay_text)
-    features_manual = np.array([stats])
+    if not essays:
+        return jsonify({"error": "No essays provided"}), 400
 
-    features_final = np.hstack((features_bert, features_manual))
+    results = []
+    for item in essays:
+        essay_text = item.get('essay_text', '')
+        prompt_id = item.get('prompt_id', 1)
+        essay_id = item.get('essay_id', None)
+        prompt_text = PROMPT_MAP.get(prompt_id, PROMPT_MAP[1])
 
-    prediction = clf.predict(features_final)[0]
+        result = evaluate_essay(essay_text, prompt_text)
+        result["essay_id"] = essay_id
+        results.append(result)
 
-    return jsonify({
-        "score": int(prediction),  # Convert numpy int to python int
-        "grammar_error_rate": stats[1],
-        "word_count": stats[0]
-    })
+    return jsonify({"results": results})
 
 
 if __name__ == '__main__':
-    app.run(port=5001, debug=True)
+    app.run(host="0.0.0.0", port=5001)

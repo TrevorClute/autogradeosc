@@ -4,8 +4,8 @@ class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :rememberable, :validatable
 
   validates :email, format: {
-    with: /\A[\w+\-.]+@(osc\.edu|osu\.edu)\z/i,
-    message: "must be an @osc.edu or @osu.edu address"
+    with: /\A[\w+\-.]+@osc\.edu\z/i,
+    message: "must be an @osc.edu address"
   }
 
   # This method allows creating a user without a password (we generate a fake one)

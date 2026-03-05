@@ -1,0 +1,50 @@
+<div class="container">
+  <div class="card">
+    <div class="card-header"><h2>Batch Evaluation Results</h2></div>
+
+    <table class="results-table" style="width: 100%; border-collapse: collapse; margin: 1rem 0;">
+      <thead>
+        <tr style="border-bottom: 2px solid #ddd;">
+          <th style="text-align: left; padding: 0.5rem;">File</th>
+          <th style="text-align: center; padding: 0.5rem;">Score</th>
+          <th style="text-align: center; padding: 0.5rem;">Word Count</th>
+          <th style="text-align: center; padding: 0.5rem;">Spelling Errors</th>
+          <th style="text-align: center; padding: 0.5rem;">Grammar Errors</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @results.each do |result| %>
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 0.5rem;"><%= result['essay_id'] %></td>
+            <td style="text-align: center; padding: 0.5rem;"><%= result['score'] %> / 3</td>
+            <td style="text-align: center; padding: 0.5rem;"><%= result['word_count'] %></td>
+            <td style="text-align: center; padding: 0.5rem;"><%= result['spelling_errors'] %></td>
+            <td style="text-align: center; padding: 0.5rem;"><%= result['grammar_errors'] %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <button id="download-csv" class="btn" style="margin-right: 0.5rem;">Download CSV</button>
+    <%= link_to "Evaluate More", batch_essays_path, class: "btn" %>
+    <%= link_to "Single Essay Mode", root_path, class: "btn btn-secondary" %>
+  </div>
+</div>
+
+<script>
+  document.getElementById("download-csv").addEventListener("click", function() {
+    var rows = [["essay_id", "score", "word_count", "spelling_errors", "grammar_errors"]];
+    <% @results.each do |result| %>
+      rows.push(["<%= j result['essay_id'].to_s %>", "<%= result['score'] %>", "<%= result['word_count'] %>", "<%= result['spelling_errors'] %>", "<%= result['grammar_errors'] %>"]);
+    <% end %>
+
+    var csv = rows.map(function(row) { return row.join(","); }).join("\n");
+    var blob = new Blob([csv], { type: "text/csv" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "batch_results.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+</script>

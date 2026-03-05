@@ -1,4 +1,15 @@
 data/
 __pycache__/
+*.pyc
 .venv/
 .env
+.ruby-lsp/
+.DS_Store
+.git/
+.gitignore
+*.md
+model/train_regression.py
+model/classifier.pkl
+model/hybrid_classifier.pkl
+model/train.py
+test_api.sh

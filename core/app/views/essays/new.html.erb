@@ -28,5 +28,9 @@
 
       <%= f.submit "Analyze Essay", class: "btn", data:{turbo: false} %>
     <% end %>
+
+    <div style="margin-top: 1rem;">
+      <%= link_to "Batch Upload Mode", batch_essays_path, class: "btn btn-secondary" %>
+    </div>
   </div>
 </div>

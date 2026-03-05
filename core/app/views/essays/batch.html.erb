@@ -1,0 +1,82 @@
+<div class="container">
+  <% if flash[:alert] %>
+    <div class="alert"><%= flash[:alert] %></div>
+  <% end %>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>OSC Batch Essay Evaluator</h2>
+    </div>
+
+    <%= form_with url: batch_essays_path, multipart: true, local: true, id: "batch-form" do |f| %>
+      <div class="form-group">
+        <label>Upload Multiple PDFs or Text Files</label>
+        <%= f.file_field :essay_files, multiple: true, accept: ".pdf,.txt", id: "file-input" %>
+        <small>Hold Ctrl/Cmd to select multiple files</small>
+      </div>
+
+      <div id="file-prompt-list" style="display: none; margin: 1rem 0;">
+        <label><strong>Select a prompt for each file:</strong></label>
+      </div>
+
+      <%= f.submit "Analyze Essays", class: "btn", data: { turbo: false }, id: "submit-btn", style: "display: none;" %>
+    <% end %>
+
+    <div style="margin-top: 1rem;">
+      <%= link_to "Single Essay Mode", root_path, class: "btn btn-secondary" %>
+    </div>
+  </div>
+</div>
+
+<script>
+  var promptOptions = [
+    { value: 1, label: "Why would you be a good candidate for the program?" },
+    { value: 2, label: "How might you benefit from participation in the program?" },
+    { value: 3, label: "Give an example of your work on a group project. Describe your role, any successes, and how you handled any frustrations." },
+    { value: 4, label: "Please look at the past student projects in the archives on this website and detail which ones are of interest to you and why." }
+  ];
+
+  document.getElementById("file-input").addEventListener("change", function() {
+    var files = this.files;
+    var container = document.getElementById("file-prompt-list");
+    var submitBtn = document.getElementById("submit-btn");
+
+    // Clear old entries (keep the label)
+    var oldRows = container.querySelectorAll(".file-row");
+    oldRows.forEach(function(row) { row.remove(); });
+
+    if (files.length === 0) {
+      container.style.display = "none";
+      submitBtn.style.display = "none";
+      return;
+    }
+
+    container.style.display = "block";
+    submitBtn.style.display = "inline-block";
+
+    for (var i = 0; i < files.length; i++) {
+      var row = document.createElement("div");
+      row.className = "file-row";
+      row.style.cssText = "display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid #eee;";
+
+      var nameSpan = document.createElement("span");
+      nameSpan.textContent = files[i].name;
+      nameSpan.style.cssText = "min-width: 200px; font-weight: 500;";
+
+      var select = document.createElement("select");
+      select.name = "prompts[]";
+      select.style.cssText = "flex: 1;";
+
+      for (var j = 0; j < promptOptions.length; j++) {
+        var opt = document.createElement("option");
+        opt.value = promptOptions[j].value;
+        opt.textContent = promptOptions[j].label;
+        select.appendChild(opt);
+      }
+
+      row.appendChild(nameSpan);
+      row.appendChild(select);
+      container.appendChild(row);
+    }
+  });
+</script>

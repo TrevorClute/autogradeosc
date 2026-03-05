@@ -7,8 +7,8 @@ class AuthController < ApplicationController
   def send_code
     email = params[:email].downcase.strip
 
-    unless email.match?(/\A[\w+\-.]+@(osc\.edu|osu\.edu)\z/i)
-      flash[:alert] = "Access restricted to @osc.edu or @osu.edu emails."
+    unless email.match?(/\A[\w+\-.]+@osc\.edu\z/i)
+      flash[:alert] = "Access restricted to @osc.edu emails."
       return redirect_to new_user_session_path
     end
 

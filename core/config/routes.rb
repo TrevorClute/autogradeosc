@@ -14,7 +14,12 @@ Rails.application.routes.draw do
   post '/verify', to: 'auth#verify_code', as: :verify_code
 
   # 4. Main App Routes
-  resources :essays, only: [:new, :create]
+  resources :essays, only: [:new, :create] do
+    collection do
+      get :batch
+      post :batch, to: 'essays#create_batch'
+    end
+  end
   root "essays#new"
 
   match "*path", to: 'application#not_found', via: :all
