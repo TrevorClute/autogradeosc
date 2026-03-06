@@ -10,8 +10,8 @@ rails s
 
 ### Environment variables
 
-FLASK_URL=\<url to flask service\>
-FLASK_API_KEY=\<internal secret to eval service\>
-GMAIL_USERNAME=\<username for sending emails\>
-GMAIL_PASSWORD=\<passkey for email\>
-SEND_GRID_KEY=\<sendgrid api key\>
+FLASK_URL=\<url to flask service\> <br>
+FLASK_API_KEY=\<internal secret to eval service\> <br>
+GMAIL_USERNAME=\<username for sending emails\> <br>
+GMAIL_PASSWORD=\<passkey for email\> <br>
+SEND_GRID_KEY=\<sendgrid api key\> <br>
