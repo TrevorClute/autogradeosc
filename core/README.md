@@ -1,24 +1,17 @@
-# README
+web wrapper for python eval service
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+### Setup
 
-Things you may want to cover:
+```bash
+bundle install
+rails db:create db:migrate
+rails s
+```
 
-* Ruby version
+### Environment variables
 
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+FLASK_URL=<url to flask service>
+FLASK_API_KEY=<internal secret to eval service>
+GMAIL_USERNAME=<username for sending emails>
+GMAIL_PASSWORD=<passkey for email>
+SEND_GRID_KEY=<sendgrid api key>
